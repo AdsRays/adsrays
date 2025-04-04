@@ -1,13 +1,13 @@
 
 // ...все импорты остаются как есть
-import { Input } from "@/components/ui/input";
+import { Input } from "../components/ui/input";
 import { useEffect, useState } from "react";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Label } from "../components/ui/label";
+import { Textarea } from "../components/ui/textarea";
 import { Download, Info, Zap, Upload, ImageIcon, Star, AlertCircle, Rocket, ClipboardCheck, Bot, ArrowRightCircle, Wand2, Sparkles, FileDown, Copy } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Card, CardContent } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../components/ui/tabs";
 
 export default function MetaProfitDashboard() {
   const [selectedTab, setSelectedTab] = useState("top-creatives");
