@@ -1,0 +1,83 @@
+/* ===== БАЗА ===== */
+:root{
+  --blue:#1B77F2;
+  --text:#34342A;
+  --line:#BABABA;
+  --bg:#F0F2F5;
+  --card:#FFFFFF;
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Apple Color Emoji","Segoe UI Emoji";
+}
+
+/* ===== Обёртка приложения ===== */
+.app-shell{
+  max-width: 1180px;
+  margin: 24px auto 48px;
+  padding: 0 16px;
+}
+
+/* ===== Заголовки ===== */
+h1{
+  font-size:20px; font-weight:700; margin:0 0 16px;
+}
+h2{
+  font-size:16px; font-weight:700; margin:24px 0 12px;
+}
+
+/* ===== Карточки/блоки ===== */
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:16px;
+}
+
+/* ===== Сетка 2 колонки (сайдбар + контент) ===== */
+.layout{
+  display:grid;
+  grid-template-columns: 360px 1fr;
+  gap:24px;
+}
+@media (max-width: 960px){
+  .layout{ grid-template-columns: 1fr; }
+}
+
+/* ===== Формы ===== */
+label{display:block; font-size:12px; margin:0 0 6px;}
+.input, .select{
+  width:100%;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:#fff;
+  outline:none;
+}
+.row{ margin-bottom:12px; }
+
+/* Радио-список целей */
+.goal-list .row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+.goal-list input[type="radio"]{ transform:translateY(1px); }
+
+/* ===== Таблица диагноза ===== */
+.table{ width:100%; border-collapse:collapse; }
+.table th, .table td{
+  border:1px solid var(--line);
+  padding:8px 10px;
+  text-align:left;
+  vertical-align:top;
+  font-size:13px;
+}
+.table th{ background:#f7f7f7; font-weight:600; }
+
+/* ===== Мелочи ===== */
+.small{ font-size:12px; }
+.muted{ color:#666; }
+.link{ color:var(--blue); text-decoration:underline; cursor:pointer; }
+.hr{ height:1px; background:var(--line); border:0; margin:16px 0; }
