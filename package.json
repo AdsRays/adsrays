@@ -9,27 +9,21 @@
     "react-dom": "^18.0.0",
     "react-scripts": "5.0.1"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "server": "node server/index.js",
-    "dev": "concurrently \"npm run server\" \"npm start\""
-  },
-"proxy": "http://localhost:3001",
-"browserslist": {
-
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
-  },
   "devDependencies": {
+    "@craco/craco": "^7.1.0",
     "concurrently": "^9.2.0",
     "eslint-plugin-jsx-a11y": "^6.10.2"
+  },
+  "scripts": {
+    "start": "craco start",
+    "build": "craco build",
+    "server": "node server/index.js",
+    "dev": "concurrently \"npm run server\" \"npm start\"",
+    "test": "craco test"
+  },
+  "proxy": "http://localhost:3001",
+  "browserslist": {
+    "production": [">0.2%","not dead","not op_mini all"],
+    "development": ["last 1 chrome version","last 1 firefox version","last 1 safari version"]
   }
 }
