@@ -1,19 +1,35 @@
-
 {
   "name": "adsrays",
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "@react-pdf/renderer": "^4.3.0",
+    "papaparse": "^5.5.3",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
     "react-scripts": "5.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
-    "dev": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "echo \"no tests\" && exit 0",
-    "lint": "echo \"No lint configured\"",
-    "format": "echo \"No format configured\""
+    "server": "node server/index.js",
+    "dev": "concurrently \"npm run server\" \"npm start\""
+  },
+"proxy": "http://localhost:3001",
+"browserslist": {
+
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2"
   }
 }
