@@ -1,9 +1,12 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App';
+// src/index.js — чистый клиентский код React
+import React from "react";
+import ReactDOM from "react-dom";
+import "./index.css"; // если у тебя есть стили
+import App from "./App";
 
-createRoot(document.getElementById('root')).render(
+ReactDOM.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>
+  </React.StrictMode>,
+  document.getElementById("root")
 );
