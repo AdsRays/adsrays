@@ -10,6 +10,10 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build"
+    "dev": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "echo \"No tests specified\"",
+    "lint": "echo \"No lint configured\"",
+    "format": "echo \"No format configured\""
   }
 }
