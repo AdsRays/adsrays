@@ -4,7 +4,7 @@
 - Node 18.x
 
 ## Installation
-- `npm ci`
+- `npm ci` if `package-lock.json` is present, otherwise `npm i`
 
 ## Development
 - `npm run dev`
