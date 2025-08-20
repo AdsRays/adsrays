@@ -1,5 +1,9 @@
-import IntroPlayground from './experiments/IntroPlayground';
+import IntroPlayground from "./experiments/IntroPlayground";
 
 export default function App() {
-  return <IntroPlayground />;
+  return (
+    <div className="app-shell">
+      <IntroPlayground />
+    </div>
+  );
 }
