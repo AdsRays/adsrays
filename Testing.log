@@ -1,6 +1,6 @@
 Creating an optimized production build...
 Failed to compile.
 
-Module not found: Error: Can't resolve './lib/analyzer' in '/workspaces/adsrays/src'
+Module not found: Error: Can't resolve './components/PDFReport' in '/workspaces/adsrays/src'
 
 
