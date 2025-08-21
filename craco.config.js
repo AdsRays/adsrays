@@ -15,7 +15,7 @@ module.exports = {
       // Фолбэки для пакетов, которые ожидают ноды
       webpackConfig.resolve.fallback = {
         ...(webpackConfig.resolve.fallback || {}),
-        process: require.resolve("process/browser"),
+        process: require.resolve("process/browser.js"),
         util: require.resolve("util/"),
         buffer: require.resolve("buffer/"),
       };
@@ -24,7 +24,7 @@ module.exports = {
       webpackConfig.plugins = webpackConfig.plugins || [];
       webpackConfig.plugins.push(
         new webpack.ProvidePlugin({
-          process: "process/browser",
+          process: "process/browser.js",
           Buffer: ["buffer", "Buffer"],
         })
       );
