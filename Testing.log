@@ -1,6 +1,6 @@
 Creating an optimized production build...
 Failed to compile.
 
-Module not found: Error: Can't resolve './components/AgeBreakdownPanel' in '/workspaces/adsrays/src'
+Attempted import error: 'scoreItem' is not exported from './lib/analyzer' (imported as 'scoreItem').
 
 
