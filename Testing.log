@@ -1,7 +1,6 @@
 Creating an optimized production build...
 Failed to compile.
 
-Module not found: Error: You attempted to import /workspaces/adsrays/node_modules/react/jsx-runtime.js which falls outside of the project src/ directory. Relative imports outside of src/ are not supported.
-You can either move it inside src/, or add a symlink to it from project's node_modules/.
+Module not found: Error: Can't resolve './lib/analyzer' in '/workspaces/adsrays/src'
 
 
