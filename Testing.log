@@ -1,0 +1,27 @@
+
+> adsrays@1.0.0 build
+> craco build
+
+Creating an optimized production build...
+Compiled successfully.
+
+File sizes after gzip:
+
+  492.95 kB  build/static/js/626.8be54121.chunk.js
+  73.63 kB   build/static/js/main.97990a86.js
+  3.13 kB    build/static/css/main.88f0b593.css
+  479 B      build/static/js/695.4a4c8022.chunk.js
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  npm install -g serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
+
