@@ -9,8 +9,9 @@
 import React, { useMemo, useState } from "react";
 import Papa from "papaparse";
 import { fetchAdInsights } from "./lib/metaApi";
-import PDFReport from "./components/PDFReport";
 import AgeBreakdownPanel from "./components/AgeBreakdownPanel"; // если файл лежит в src/
+
+const PDFReport = React.lazy(() => import("./components/PDFReport"));
 
 
 
@@ -262,6 +263,7 @@ export default function AdsRaysInterface() {
   const [expandedCampaigns, setExpandedCampaigns] = useState(new Set());
   const [campaignCreatives, setCampaignCreatives] = useState({}); // { [campaignId]: Array<creative> }
   const [loadingCreatives, setLoadingCreatives] = useState(new Set());
+  const [showPDF] = useState(false);
 
   // Загрузка кампаний (реальные данные)
   async function handleLoadCampaigns() {
@@ -1099,6 +1101,11 @@ const creativeObjectivesInSelection = useMemo(() => {
                   );
                 })()}
               </div>
+            )}
+            {showPDF && (
+              <React.Suspense fallback={<div>Загрузка PDF...</div>}>
+                <PDFReport formData={{}} campaignHistory={[]} />
+              </React.Suspense>
             )}
           </>
         )}
