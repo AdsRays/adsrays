@@ -1,6 +1,21 @@
 Creating an optimized production build...
-Failed to compile.
+Compiled successfully.
 
-Attempted import error: 'scoreItem' is not exported from './lib/analyzer' (imported as 'scoreItem').
+File sizes after gzip:
 
+  66.63 kB  build/static/js/main.c6fc4464.js
+  2.93 kB   build/static/css/main.3f278c5f.css
+
+The project was built assuming it is hosted at /.
+You can control this with the homepage field in your package.json.
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+  npm install -g serve
+  serve -s build
+
+Find out more about deployment here:
+
+  https://cra.link/deployment
 
