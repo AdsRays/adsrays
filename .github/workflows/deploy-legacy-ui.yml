@@ -12,5 +12,27 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with: { node-version: '18' }
-      - run: npx -y vercel@latest pull --yes --environment=production
-      - run: npx -y vercel@latest deploy --prod --yes
+
+      - name: Check token present
+        run: test -n "$VERCEL_TOKEN" || (echo "Missing VERCEL_TOKEN"; exit 1)
+
+      - name: Show project.json
+        run: |
+          test -s .vercel/project.json || (echo "No .vercel/project.json"; exit 1)
+          cat .vercel/project.json
+
+      - name: Export IDs from project.json
+        run: |
+          echo "VERCEL_ORG_ID=$(jq -r '.orgId' .vercel/project.json)" >> $GITHUB_ENV
+          echo "VERCEL_PROJECT_ID=$(jq -r '.projectId' .vercel/project.json)" >> $GITHUB_ENV
+
+      - name: vercel whoami (debug)
+        run: npx -y vercel@latest whoami --token "$VERCEL_TOKEN" || true
+
+      - name: vercel pull (prod)
+        run: npx -y vercel@latest pull --yes --environment=production \
+               --token "$VERCEL_TOKEN" --scope adsrays
+
+      - name: vercel deploy (remote, prod)
+        run: npx -y vercel@latest deploy --prod --yes \
+               --token "$VERCEL_TOKEN" --scope adsrays
