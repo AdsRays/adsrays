@@ -8,13 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_NEW }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: '20' }
-      - run: npm ci || npm i --legacy-peer-deps --no-audit --no-fund
-      - run: npx -y vercel@latest pull --yes --environment=production
-      - run: npx -y vercel@latest build
-      - run: npx -y vercel@latest deploy --prebuilt --prod
+      - name: Remote deploy (prod)
+        run: npx -y vercel@latest deploy --prod --yes \
+             --project ${{ secrets.VERCEL_PROJECT_ID_NEW }} \
+             --scope adsrays \
+             --token $VERCEL_TOKEN
