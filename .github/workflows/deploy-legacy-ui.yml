@@ -13,6 +13,9 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '18' }
 
+      - name: Ensure jq
+        run: sudo apt-get update -y && sudo apt-get install -y jq
+
       - name: Show project.json
         run: |
           test -s .vercel/project.json || (echo "No .vercel/project.json"; exit 1)
@@ -29,10 +32,27 @@ jobs:
       - name: vercel deploy (remote, prod)
         run: |
           npx -y vercel@latest deploy --prod --yes \
-            --project "$VERCEL_PROJECT_ID" \
             --scope adsrays \
-            --token "$VERCEL_TOKEN" \
-          | tee deploy.log
-          echo "-----"
-          echo "Production URL:"
-          sed -nE 's/.*(Production|Alias): *\(? *(https[^ )]+).*/\2/p' deploy.log | tail -1
+            --token "$VERCEL_TOKEN"
+
+      - name: Publish Production URL
+        run: |
+          DEPLOY=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            --get 'https://api.vercel.com/v6/deployments' \
+            --data-urlencode "projectId=$VERCEL_PROJECT_ID" \
+            --data-urlencode "teamId=$VERCEL_ORG_ID" \
+            --data-urlencode "target=production" \
+            --data-urlencode "state=READY" \
+            --data-urlencode "limit=1")
+          DID=$(jq -r '.deployments[0].uid // empty' <<<"$DEPLOY")
+          URL=$(jq -r  '.deployments[0].url // empty' <<<"$DEPLOY")
+          ALIAS=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
+            --get 'https://api.vercel.com/v2/aliases' \
+            --data-urlencode "deploymentId=$DID" \
+            --data-urlencode "teamId=$VERCEL_ORG_ID" \
+            | jq -r '[.aliases[].alias] | map(select(test("-git-")|not)) | .[0] // empty' || true)
+          if [ -n "$ALIAS" ]; then
+            echo "Production: https://$ALIAS"
+          else
+            echo "Production: https://$URL"
+          fi
