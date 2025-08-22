@@ -7,16 +7,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      CI: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-      - name: Install deps (ci or fallback)
-        run: npm ci || npm i --legacy-peer-deps --no-audit --no-fund
-      - name: Build
-        run: npx -y vercel@latest build --token ${{ secrets.VERCEL_TOKEN }}
-      - name: Deploy
-        run: npx -y vercel@latest deploy --prebuilt --prod --yes --name adsrays-legacy-ui --token ${{ secrets.VERCEL_TOKEN }}
+      - name: Remote deploy to Vercel (prod)
+        run: npx -y vercel@latest deploy --prod --yes --name adsrays-legacy-ui --scope adsrays --token ${{ secrets.VERCEL_TOKEN }}
