@@ -14,14 +14,14 @@ jobs:
       - name: Install deps
         run: npm ci || npm i --legacy-peer-deps --no-audit --no-fund
 
-      - name: vercel link (by project id)
+      - name: vercel link (by name)
         run: npx -y vercel@latest link \
-               --project ${{ secrets.VERCEL_PROJECT_ID_LEG }} \
+               --project adsrays-legacy-ui \
                --yes --scope adsrays \
                --token ${{ secrets.VERCEL_TOKEN }}
 
       - name: vercel pull (prod)
-        run: npx -y vercel@latest pull --yes --environment=production --debug \
+        run: npx -y vercel@latest pull --yes --environment=production \
                --token ${{ secrets.VERCEL_TOKEN }}
 
       - name: vercel build
