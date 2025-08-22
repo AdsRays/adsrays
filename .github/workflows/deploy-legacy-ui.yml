@@ -29,13 +29,28 @@ jobs:
       - name: vercel whoami (debug)
         run: npx -y vercel@latest whoami --token "$VERCEL_TOKEN" || true
 
-      - name: vercel deploy (remote, prod)
+      - name: vercel deploy (remote, prod, debug)
+        env:
+          VERCEL_NON_INTERACTIVE: "1"
+          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID }}
         run: |
+          set -x
           npx -y vercel@latest deploy --prod --yes \
             --scope adsrays \
-            --token "$VERCEL_TOKEN"
+            --token "$VERCEL_TOKEN" \
+            --debug \
+          2>&1 | tee deploy.log
 
-      - name: Publish Production URL
+      - name: Dump deploy error tail (if failed)
+        if: failure()
+        run: |
+          echo "::group::deploy.log (tail)"
+          tail -n 200 deploy.log || true
+          echo "::endgroup::"
+
+      - name: Publish Production URL (always)
+        if: always()
         run: |
           DEPLOY=$(curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" \
             --get 'https://api.vercel.com/v6/deployments' \
@@ -53,6 +68,8 @@ jobs:
             | jq -r '[.aliases[].alias] | map(select(test("-git-")|not)) | .[0] // empty' || true)
           if [ -n "$ALIAS" ]; then
             echo "Production: https://$ALIAS"
-          else
+          elif [ -n "$URL" ]; then
             echo "Production: https://$URL"
+          else
+            echo "Production: not-found"
           fi
