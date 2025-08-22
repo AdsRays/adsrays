@@ -1,7 +1,7 @@
 name: Deploy legacy-ui to Vercel
 on:
   push: { branches: [ legacy-ui-build ] }
-  workflow_dispatch:
+  workflow_dispatch: {}
 
 jobs:
   deploy:
@@ -11,81 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '18' }   # CRA надёжнее на Node 18
-
-      - name: Ensure jq
-        run: sudo apt-get update -y && sudo apt-get install -y jq
-
-      - name: Show project.json
-        run: |
-          test -s .vercel/project.json || (echo "No .vercel/project.json" && exit 1)
-          cat .vercel/project.json
-
-      - name: Export IDs from project.json
-        run: |
-          echo "VERCEL_ORG_ID=$(jq -r '.orgId' .vercel/project.json)" >> $GITHUB_ENV
-          echo "VERCEL_PROJECT_ID=$(jq -r '.projectId' .vercel/project.json)" >> $GITHUB_ENV
-          echo "VERCEL_APP=$(jq -r '.projectName' .vercel/project.json)" >> $GITHUB_ENV
-
-      - name: Install deps
-        run: npm ci || npm i --legacy-peer-deps --no-audit --no-fund
-
-      - name: vercel pull (prod)
-        run: npx -y vercel@latest pull --yes --environment=production --debug --token "$VERCEL_TOKEN"
-
-      - name: vercel build
-        env:
-          NODE_OPTIONS: --openssl-legacy-provider
-          CI: "false"                  # не превращать warning’и в ошибки
-        run: npx -y vercel@latest build --token "$VERCEL_TOKEN"
-
-      - name: vercel deploy (prebuilt)
-        id: prebuilt
-        continue-on-error: true
-        run: |
-          set -o pipefail
-          npx -y vercel@latest deploy --prebuilt --prod --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy.log || true
-          URL="$(sed -nE 's/.*(Production|Alias): *\(? *(https[^ )]+).*/\2/p' deploy.log | tail -1 || true)"
-          case "$URL" in *vercel.com*|*vercel.link*|*/inspect*) URL="";; esac
-          [ -z "$URL" ] && URL="$(tail -n 200 deploy.log | grep -Eo 'https://[^ ]+' | grep -vE 'vercel\.com|vercel\.link|/inspect' | tail -1 || true)"
-          echo "URL=$URL" >> "$GITHUB_OUTPUT"
-
-      - name: Fallback deploy (remote build)
-        id: fallback
-        if: steps.prebuilt.outcome == 'failure'
-        run: |
-          set -o pipefail
-          npx -y vercel@latest deploy --prod --yes --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy_fallback.log || true
-          URL="$(sed -nE 's/.*(Production|Alias): *\(? *(https[^ )]+).*/\2/p' deploy_fallback.log | tail -1 || true)"
-          case "$URL" in *vercel.com*|*vercel.link*|*/inspect*) URL="";; esac
-          [ -z "$URL" ] && URL="$(tail -n 200 deploy_fallback.log | grep -Eo 'https://[^ ]+' | grep -vE 'vercel\.com|vercel\.link|/inspect' | tail -1 || true)"
-          echo "URL=$URL" >> "$GITHUB_OUTPUT"
-
-      - name: Publish Production URL (with API fallback)
-        if: always()
-        env:
-          PRE:  ${{ steps.prebuilt.outputs.URL }}
-          FALL: ${{ steps.fallback.outputs.URL }}
-          VERCEL_ORG_ID: ${{ env.VERCEL_ORG_ID }}
-          VERCEL_APP:    ${{ env.VERCEL_APP }}
-          VERCEL_TOKEN:  ${{ secrets.VERCEL_TOKEN }}
-        run: |
-          URL="$PRE"; [ -z "$URL" ] && URL="$FALL"
-          case "$URL" in *vercel.com*|*vercel.link*|*/inspect*) URL="";; esac
-          if [ -z "$URL" ]; then
-            API_URL="https://api.vercel.com/v6/deployments?app=$VERCEL_APP&teamId=$VERCEL_ORG_ID&limit=20"
-            URL="$(curl -fsSL -H "Authorization: Bearer $VERCEL_TOKEN" "$API_URL" \
-              | jq -r '[.deployments[] | select(.readyState=="READY" and .target=="production")
-                         | (.alias[]? // .url)]
-                        | map(select(.!=null)) | .[0]')"
-            [ -n "$URL" ] && case "$URL" in http*) :;; *) URL="https://$URL";; esac
-          fi
-          if [ -n "$URL" ]; then
-            echo "Production: $URL" | tee -a "$GITHUB_STEP_SUMMARY"
-            echo "$URL"
-          else
-            echo "No Production URL found" >&2
-            echo '--- deploy.log tail ---'; tail -n 120 deploy.log || true
-            echo '--- deploy_fallback.log tail ---'; tail -n 120 deploy_fallback.log || true
-            exit 1
-          fi
+        with: { node-version: '18' }
+      - run: npx -y vercel@latest pull --yes --environment=production
+      - run: npx -y vercel@latest deploy --prod --yes
