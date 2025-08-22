@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '18' }   # важный фикс
+        with: { node-version: '18' }   # старый CRA стабильнее на Node 18
 
       - name: Ensure jq
         run: sudo apt-get update -y && sudo apt-get install -y jq
@@ -43,7 +43,8 @@ jobs:
         run: |
           set -o pipefail
           npx -y vercel@latest deploy --prebuilt --prod --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy.log || true
-          URL="$(grep -Eo 'https://[^ ]+vercel\.app' deploy.log | tail -1 || true)"
+          URL="$(sed -n 's/.*[Pp]roduction:[[:space:]]*\\(https[^ ]*\\).*/\\1/p' deploy.log | tail -1 || true)"
+          [ -z "$URL" ] && URL="$(tail -n 200 deploy.log | grep -Eo 'https://[^ ]+' | grep -vE 'vercel\\.com|/inspect' | tail -1 || true)"
           echo "URL=$URL" >> "$GITHUB_OUTPUT"
 
       - name: Fallback deploy (remote build)
@@ -52,7 +53,8 @@ jobs:
         run: |
           set -o pipefail
           npx -y vercel@latest deploy --prod --yes --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy_fallback.log || true
-          URL="$(grep -Eo 'https://[^ ]+vercel\.app' deploy_fallback.log | tail -1 || true)"
+          URL="$(sed -n 's/.*[Pp]roduction:[[:space:]]*\\(https[^ ]*\\).*/\\1/p' deploy_fallback.log | tail -1 || true)"
+          [ -z "$URL" ] && URL="$(tail -n 200 deploy_fallback.log | grep -Eo 'https://[^ ]+' | grep -vE 'vercel\\.com|/inspect' | tail -1 || true)"
           echo "URL=$URL" >> "$GITHUB_OUTPUT"
 
       - name: Publish Production URL
@@ -62,12 +64,20 @@ jobs:
           FALL: ${{ steps.fallback.outputs.URL }}
         run: |
           URL="$PRE"; [ -z "$URL" ] && URL="$FALL"
+          if [ -z "$URL" ]; then
+            for f in deploy.log deploy_fallback.log; do
+              [ -f "$f" ] || continue
+              URL="$(sed -n 's/.*[Pp]roduction:[[:space:]]*\\(https[^ ]*\\).*/\\1/p' "$f" | tail -1 || true)"
+              [ -n "$URL" ] || URL="$(grep -Eo 'https://[^ ]+' "$f" | grep -vE 'vercel\\.com|/inspect' | tail -1 || true)"
+              [ -n "$URL" ] && break
+            done
+          fi
           if [ -n "$URL" ]; then
             echo "Production: $URL" | tee -a "$GITHUB_STEP_SUMMARY"
             echo "$URL"
           else
             echo "No Production URL found" >&2
-            echo '--- prebuilt tail ---'; tail -n 80 deploy.log || true
-            echo '--- fallback tail ---'; tail -n 80 deploy_fallback.log || true
+            tail -n 120 deploy.log || true
+            tail -n 120 deploy_fallback.log || true
             exit 1
           fi
