@@ -1,7 +1,6 @@
 name: Deploy legacy-ui to Vercel
 on:
-  push:
-    branches: [ legacy-ui-build ]
+  push: { branches: [ legacy-ui-build ] }
   workflow_dispatch:
 
 jobs:
@@ -10,7 +9,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      - name: Remote deploy to Vercel (prod)
-        run: npx -y vercel@latest deploy --prod --yes --name adsrays-legacy-ui --scope adsrays --token ${{ secrets.VERCEL_TOKEN }}
+        with: { node-version: '20' }
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Resolve Vercel IDs (legacy)
+        id: ids
+        run: |
+          npx -y vercel@latest projects ls --json --scope adsrays --token "${{ secrets.VERCEL_TOKEN }}" > projects.json
+          PID=$(jq -r '.projects[] | select(.name=="adsrays-legacy-ui") | .id' projects.json)
+          OID=$(jq -r '.projects[] | select(.name=="adsrays-legacy-ui") | .accountId' projects.json)
+          test -n "$PID" && test -n "$OID"
+          echo "VERCEL_PROJECT_ID=$PID" >> $GITHUB_ENV
+          echo "VERCEL_ORG_ID=$OID" >> $GITHUB_ENV
+
+      - name: Pull env
+        run: npx -y vercel@latest pull --yes --environment=production --token "${{ secrets.VERCEL_TOKEN }}"
+        env:
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID:     ${{ env.VERCEL_ORG_ID }}
+
+      - name: Build
+        run: npx -y vercel@latest build --token "${{ secrets.VERCEL_TOKEN }}"
+        env:
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID:     ${{ env.VERCEL_ORG_ID }}
+
+      - name: Deploy (prebuilt, prod)
+        run: npx -y vercel@latest deploy --prebuilt --prod --yes --name adsrays-legacy-ui --scope adsrays --token "${{ secrets.VERCEL_TOKEN }}"
+        env:
+          VERCEL_PROJECT_ID: ${{ env.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID:     ${{ env.VERCEL_ORG_ID }}
