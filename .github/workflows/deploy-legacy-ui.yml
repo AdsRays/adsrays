@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '20' }
+        with: { node-version: '18' }   # важный фикс
 
       - name: Ensure jq
         run: sudo apt-get update -y && sudo apt-get install -y jq
@@ -33,20 +33,17 @@ jobs:
         run: npx -y vercel@latest pull --yes --environment=production --debug --token "$VERCEL_TOKEN"
 
       - name: vercel build
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
         run: npx -y vercel@latest build --token "$VERCEL_TOKEN"
 
-      - name: Inspect .vercel/output
-        run: |
-          ls -lah .vercel/output || (echo "No .vercel/output" && exit 2)
-          find .vercel/output -maxdepth 2 -type f | sort | head -80
-
-      - name: vercel deploy (prebuilt, prod, debug)
+      - name: vercel deploy (prebuilt)
         id: prebuilt
         continue-on-error: true
         run: |
           set -o pipefail
           npx -y vercel@latest deploy --prebuilt --prod --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy.log || true
-          URL="$(sed -n 's/.*Production: *\(\https[^ ]*\).*/\1/p' deploy.log | tail -1 || true)"
+          URL="$(grep -Eo 'https://[^ ]+vercel\.app' deploy.log | tail -1 || true)"
           echo "URL=$URL" >> "$GITHUB_OUTPUT"
 
       - name: Fallback deploy (remote build)
@@ -55,10 +52,11 @@ jobs:
         run: |
           set -o pipefail
           npx -y vercel@latest deploy --prod --yes --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy_fallback.log || true
-          URL="$(sed -n 's/.*Production: *\(\https[^ ]*\).*/\1/p' deploy_fallback.log | tail -1 || true)"
+          URL="$(grep -Eo 'https://[^ ]+vercel\.app' deploy_fallback.log | tail -1 || true)"
           echo "URL=$URL" >> "$GITHUB_OUTPUT"
 
       - name: Publish Production URL
+        if: always()
         env:
           PRE: ${{ steps.prebuilt.outputs.URL }}
           FALL: ${{ steps.fallback.outputs.URL }}
@@ -69,5 +67,7 @@ jobs:
             echo "$URL"
           else
             echo "No Production URL found" >&2
+            echo '--- prebuilt tail ---'; tail -n 80 deploy.log || true
+            echo '--- fallback tail ---'; tail -n 80 deploy_fallback.log || true
             exit 1
           fi
