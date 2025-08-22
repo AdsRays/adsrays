@@ -35,22 +35,39 @@ jobs:
       - name: vercel build
         run: npx -y vercel@latest build --token "$VERCEL_TOKEN"
 
-      - name: Inspect .vercel/output (sanity)
+      - name: Inspect .vercel/output
         run: |
-          set -e
           ls -lah .vercel/output || (echo "No .vercel/output" && exit 2)
           find .vercel/output -maxdepth 2 -type f | sort | head -80
 
       - name: vercel deploy (prebuilt, prod, debug)
+        id: prebuilt
+        continue-on-error: true
         run: |
-          set -eo pipefail
-          npx -y vercel@latest deploy --prebuilt --prod --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy.log
-          sed -n 's/.*Production: *\(\https[^ ]*\).*/\1/p' deploy.log | tail -1 > PROD_URL.txt || true
-          cat PROD_URL.txt || true
+          set -o pipefail
+          npx -y vercel@latest deploy --prebuilt --prod --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy.log || true
+          URL="$(sed -n 's/.*Production: *\(\https[^ ]*\).*/\1/p' deploy.log | tail -1 || true)"
+          echo "URL=$URL" >> "$GITHUB_OUTPUT"
 
       - name: Fallback deploy (remote build)
-        if: failure()
+        id: fallback
+        if: steps.prebuilt.outcome == 'failure'
         run: |
-          echo "Prebuilt failed — trying remote build deploy..."
-          npx -y vercel@latest deploy --prod --yes --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy_fallback.log
-          sed -n 's/.*Production: *\(\https[^ ]*\).*/\1/p' deploy_fallback.log | tail -1 || true
+          set -o pipefail
+          npx -y vercel@latest deploy --prod --yes --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy_fallback.log || true
+          URL="$(sed -n 's/.*Production: *\(\https[^ ]*\).*/\1/p' deploy_fallback.log | tail -1 || true)"
+          echo "URL=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Publish Production URL
+        env:
+          PRE: ${{ steps.prebuilt.outputs.URL }}
+          FALL: ${{ steps.fallback.outputs.URL }}
+        run: |
+          URL="$PRE"; [ -z "$URL" ] && URL="$FALL"
+          if [ -n "$URL" ]; then
+            echo "Production: $URL" | tee -a "$GITHUB_STEP_SUMMARY"
+            echo "$URL"
+          else
+            echo "No Production URL found" >&2
+            exit 1
+          fi
