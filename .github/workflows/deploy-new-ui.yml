@@ -9,14 +9,15 @@ jobs:
     runs-on: ubuntu-latest
     env:
       CI: true
+      VERCEL_SCOPE: adsrays
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'   # LTS для совместимости CRA/Craco
+          node-version: '20'
       - name: Install deps (ci or fallback)
         run: npm ci || npm i --legacy-peer-deps --no-audit --no-fund
-      - run: npx -y vercel@latest link --project adsrays-new-ui --yes --token ${{ secrets.VERCEL_TOKEN }}
-      - run: npx -y vercel@latest pull --yes --environment=production --token ${{ secrets.VERCEL_TOKEN }}
-      - run: npx -y vercel@latest build --token ${{ secrets.VERCEL_TOKEN }}
-      - run: npx -y vercel@latest deploy --prebuilt --prod --token ${{ secrets.VERCEL_TOKEN }}
+      - run: npx -y vercel@latest link --project adsrays-new-ui --yes --scope ${{ env.VERCEL_SCOPE }} --token ${{ secrets.VERCEL_TOKEN }}
+      - run: npx -y vercel@latest pull --yes --environment=production --scope ${{ env.VERCEL_SCOPE }} --token ${{ secrets.VERCEL_TOKEN }}
+      - run: npx -y vercel@latest build --scope ${{ env.VERCEL_SCOPE }} --token ${{ secrets.VERCEL_TOKEN }}
+      - run: npx -y vercel@latest deploy --prebuilt --prod --scope ${{ env.VERCEL_SCOPE }} --token ${{ secrets.VERCEL_TOKEN }}
