@@ -13,13 +13,14 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
 
-      # показать, что project.json приехал в CI
+      - name: Ensure jq
+        run: sudo apt-get update -y && sudo apt-get install -y jq
+
       - name: Show project.json
         run: |
           test -s .vercel/project.json || (echo "No .vercel/project.json" && exit 1)
           cat .vercel/project.json
 
-      # вытащить orgId / projectId из project.json в ENV раннера
       - name: Export IDs from project.json
         run: |
           echo "VERCEL_ORG_ID=$(jq -r '.orgId' .vercel/project.json)" >> $GITHUB_ENV
@@ -28,15 +29,30 @@ jobs:
       - name: Install deps
         run: npm ci || npm i --legacy-peer-deps --no-audit --no-fund
 
-      # если vercel pull капризничал, даём максимум контекста
       - name: vercel pull (prod)
-        run: |
-          npx -y vercel@latest --version
-          npx -y vercel@latest whoami --token "$VERCEL_TOKEN" || true
-          npx -y vercel@latest pull --yes --environment=production --debug --token "$VERCEL_TOKEN"
+        run: npx -y vercel@latest pull --yes --environment=production --debug --token "$VERCEL_TOKEN"
 
       - name: vercel build
         run: npx -y vercel@latest build --token "$VERCEL_TOKEN"
 
-      - name: vercel deploy (prebuilt, prod)
-        run: npx -y vercel@latest deploy --prebuilt --prod --token "$VERCEL_TOKEN"
+      - name: Inspect .vercel/output (sanity)
+        run: |
+          set -e
+          ls -lah .vercel/output || (echo "No .vercel/output" && exit 2)
+          find .vercel/output -maxdepth 2 -type f | sort | head -80
+
+      - name: vercel deploy (prebuilt, prod, debug)
+        run: |
+          set -eo pipefail
+          npx -y vercel@latest deploy --prebuilt --prod --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy.log
+          # Показать итоговый URL, если он есть в выводе
+          sed -n 's/.*Production: *\(\https[^ ]*\).*/\1/p' deploy.log | tail -1 > PROD_URL.txt || true
+          cat PROD_URL.txt || true
+
+      # Фолбэк, если prebuilt упал (exit 1 на предыдущем шаге)
+      - name: Fallback deploy (remote build)
+        if: failure()
+        run: |
+          echo "Prebuilt failed — trying remote build deploy..."
+          npx -y vercel@latest deploy --prod --yes --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy_fallback.log
+          sed -n 's/.*Production: *\(\https[^ ]*\).*/\1/p' deploy_fallback.log | tail -1 || true
