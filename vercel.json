@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npx react-scripts build",
+  "buildCommand": "npx @craco/craco build",
   "outputDirectory": "build"
 }
