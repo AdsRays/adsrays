@@ -14,3 +14,4 @@ server/.env.test.local
 # Разрешаем только шаблоны (если используешь)
 !.env.example
 !server/.env.example
+.vercel
