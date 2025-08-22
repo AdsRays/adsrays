@@ -35,34 +35,27 @@ jobs:
       - name: vercel build
         run: npx -y vercel@latest build --token "$VERCEL_TOKEN"
 
-      - name: Inspect .vercel/output
-        run: |
-          ls -lah .vercel/output || (echo "No .vercel/output" && exit 2)
-          find .vercel/output -maxdepth 2 -type f | sort | head -80
-
-      # 1) Пытаемся prebuilt-деплой. Ошибку НЕ валим (continue-on-error),
-      #    и всё равно парсим URL из лога.
-      - name: vercel deploy (prebuilt, prod, debug)
+      - name: vercel deploy (prebuilt)
         id: prebuilt
         continue-on-error: true
         run: |
           set -o pipefail
           npx -y vercel@latest deploy --prebuilt --prod --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy.log || true
-          URL="$(sed -n 's/.*Production: *\(\https[^ ]*\).*/\1/p' deploy.log | tail -1 || true)"
+          # вытаскиваем ЛЮБУЮ vercel.app ссылку
+          URL="$(grep -Eo 'https://[^ ]+vercel\.app' deploy.log | tail -1 || true)"
           echo "URL=$URL" >> "$GITHUB_OUTPUT"
 
-      # 2) Если prebuilt упал — делаем удалённый билд/деплой.
       - name: Fallback deploy (remote build)
         id: fallback
         if: steps.prebuilt.outcome == 'failure'
         run: |
           set -o pipefail
           npx -y vercel@latest deploy --prod --yes --debug --token "$VERCEL_TOKEN" 2>&1 | tee deploy_fallback.log || true
-          URL="$(sed -n 's/.*Production: *\(\https[^ ]*\).*/\1/p' deploy_fallback.log | tail -1 || true)"
+          URL="$(grep -Eo 'https://[^ ]+vercel\.app' deploy_fallback.log | tail -1 || true)"
           echo "URL=$URL" >> "$GITHUB_OUTPUT"
 
-      # 3) Выводим конечный URL и фейлим job, если так и не получили ссылку.
       - name: Publish Production URL
+        if: always()
         env:
           PRE: ${{ steps.prebuilt.outputs.URL }}
           FALL: ${{ steps.fallback.outputs.URL }}
@@ -73,5 +66,7 @@ jobs:
             echo "$URL"
           else
             echo "No Production URL found" >&2
+            echo '--- prebuilt tail ---'; tail -n 80 deploy.log || true
+            echo '--- fallback tail ---'; tail -n 80 deploy_fallback.log || true
             exit 1
           fi
