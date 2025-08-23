@@ -27,7 +27,7 @@ jobs:
           echo "VERCEL_PROJECT_ID=$(jq -r '.projectId' .vercel/project.json)" >> $GITHUB_ENV
           echo "VERCEL_PROJECT_NAME=$(jq -r '.projectName' .vercel/project.json)" >> $GITHUB_ENV
 
-      # <<< мини-блок после Export IDs
+      # <<< мини-блок сразу после Export IDs
       - name: Echo IDs (debug)
         run: |
           echo "VERCEL_ORG_ID=$VERCEL_ORG_ID"
