@@ -10,7 +10,7 @@ import React, { useMemo, useState } from "react";
 import Papa from "papaparse";
 import { fetchAdInsights } from "./lib/metaApi";
 import PDFReport from "./components/PDFReport";
-import AgeBreakdownPanel from "./components/AgeBreakdownPanel"; // если файл лежит в src/
+import AgeBreakdownPanel from "components/AgeBreakdownPanel.jsx"; // если файл лежит в src/
 
 
 
