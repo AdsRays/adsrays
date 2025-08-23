@@ -10,3 +10,9 @@ export default { fetchAdInsights };
 export async function fetchCampaignTargetAges(/* accountId, campaignId, accessToken */) {
   return [];
 }
+
+// ---- TEMP STUB auto-added to unblock legacy build ----
+export async function fetchCampaignAgeInsights(/* ...args */) {
+  // TODO: implement real data fetch; temporary empty result
+  return [];
+}
