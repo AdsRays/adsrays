@@ -1,1 +1,65 @@
-# <-- сюда полностью вставь файл из блока "new-ui" выше -->
+name: Deploy new-ui to Vercel
+on:
+  push: { branches: [ new-ui ] }
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+
+      - name: Ensure jq
+        run: sudo apt-get update -y && sudo apt-get install -y jq
+
+      - name: Show project.json
+        run: |
+          test -s .vercel/project.json || (echo "No .vercel/project.json"; exit 1)
+          cat .vercel/project.json
+
+      - name: Export IDs from project.json
+        run: |
+          echo "VERCEL_ORG_ID=$(jq -r '.orgId' .vercel/project.json)" >> $GITHUB_ENV
+          echo "VERCEL_PROJECT_ID=$(jq -r '.projectId' .vercel/project.json)" >> $GITHUB_ENV
+          echo "VERCEL_PROJECT_NAME=$(jq -r '.projectName' .vercel/project.json)" >> $GITHUB_ENV
+
+      # <<< мини-блок после Export IDs
+      - name: Echo IDs (debug)
+        run: |
+          echo "VERCEL_ORG_ID=$VERCEL_ORG_ID"
+          echo "VERCEL_PROJECT_ID=$VERCEL_PROJECT_ID"
+          echo "VERCEL_PROJECT_NAME=$VERCEL_PROJECT_NAME"
+      # >>>
+
+      - name: vercel whoami (debug)
+        run: npx -y vercel@latest whoami --token "$VERCEL_TOKEN" --scope adsrays || true
+
+      - name: vercel deploy (remote, prod, debug)
+        run: npx -y vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN" --scope adsrays
+
+      - name: Publish Production URL (always)
+        if: always()
+        run: |
+          set -euo pipefail
+          api(){ curl -fsS -H "Authorization: Bearer $VERCEL_TOKEN" "$@"; }
+          DEP="$(api --get 'https://api.vercel.com/v6/deployments' \
+                   --data-urlencode "projectId=$VERCEL_PROJECT_ID" \
+                   --data-urlencode "teamId=$VERCEL_ORG_ID" \
+                   --data-urlencode 'target=production' \
+                   --data-urlencode 'state=READY' \
+                   --data-urlencode 'limit=1')"
+          DID="$(jq -r '.deployments[0].uid // empty'  <<<"$DEP")"
+          URL="$(jq -r '.deployments[0].url // empty'  <<<"$DEP")"
+          DOMS="$(api "https://api.vercel.com/v9/projects/$VERCEL_PROJECT_ID/domains?teamId=$VERCEL_ORG_ID" \
+                 | jq -r '.domains[].name' || true)"
+          ALIAS="$(api --get 'https://api.vercel.com/v2/aliases' \
+                   --data-urlencode "deploymentId=$DID" \
+                   --data-urlencode "teamId=$VERCEL_ORG_ID" \
+                 | jq -r '.aliases[].alias' \
+                 | grep -Fx -f <(printf "%s\n" $DOMS) \
+                 | head -1 || true)"
+          echo "Production: https://${ALIAS:-$URL}"
