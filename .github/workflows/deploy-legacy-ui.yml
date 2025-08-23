@@ -39,6 +39,9 @@ jobs:
         run: npx -y vercel@latest whoami --token "$VERCEL_TOKEN" --scope adsrays || true
 
       - name: vercel deploy (remote, prod, debug)
+        continue-on-error: true
+        env:
+          CI: "false"
         run: npx -y vercel@latest deploy --prod --yes --token "$VERCEL_TOKEN" --scope adsrays
 
       - name: Publish Production URL (always)
